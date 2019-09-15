@@ -55,29 +55,26 @@ int getRand(int max){
 }
 
 int itsValid(int dir, int size, int xo, int yo, char board[SIZE][SIZE]){
+	int i;
+	xo++;
+	yo++;
 	if(dir == 0){	//VERTICAL
 		if(yo > SIZE-2-size){
 			return 0;
 		}else{
-			int x = xo+1;
-			int y = yo+1;
-			int i;
 			for(i = -1; i < size+1; i++){
-				if(board[y+i][x] == '$' || board[y+i][x+1] == '$' || board[y+i][x-1] == '$'){
+				if(board[yo+i][xo] == '$' || board[yo+i][xo-1] == '$' ||  board[yo+i][xo+1] == '$'){
 					return 0;
 				}
-			}
+			}	
 			return 1;
 		}
 	}else{			//HORIZONTAL
 		if(xo > SIZE-2-size){
 			return 0;
 		}else{
-			int x = xo+1;
-			int y = yo+1;
-			int i;
 			for(i = -1; i < size+1; i++){
-				if(board[y][x+i] == '$' || board[y-1][x+i] == '$' || board[y+1][x+1] == '$'){
+				if(board[yo][xo+i] == '$' || board[yo+1][xo+i] == '$' ||  board[yo-1][xo+i] == '$'){
 					return 0;
 				}
 			}
@@ -168,11 +165,14 @@ int getShips(char board[SIZE][SIZE]){
 }
 
 
-
 void systemTurn(char ourBoard[SIZE][SIZE],char enemyBoard[SIZE][SIZE], 
 			    char systemView[SIZE][SIZE], char enemyView[SIZE][SIZE]){
 	if(getShips(systemView) == 14){
 		printf("\nGame finished, system won!\n");
+		restartPositions("userBoard.txt", ourBoard);
+		restartPositions("systemBoard.txt", enemyBoard);
+		restartPositions("userView.txt", enemyView);
+		restartPositions("enemyView.txt", systemView);
 	}else{
 		int x = rand() % 10;
 		int y = rand() % 10;
@@ -194,6 +194,10 @@ void userTurn(char ourBoard[SIZE][SIZE], char enemyBoard[SIZE][SIZE],
 	int x, y;
 	if(getShips(userView) == 14){
 		printf("\nGame finished, you won!\n");
+		restartPositions("userBoard.txt", ourBoard);
+		restartPositions("systemBoard.txt", enemyBoard);
+		restartPositions("userView.txt", userView);
+		restartPositions("enemyView.txt", enemyView);
 	}else{
 		printf("Pause (-1 0), Finish(-2 0)\n");
 		printf("Misil coordenates (x y): ");
@@ -243,6 +247,11 @@ void setup(char userBoard[SIZE][SIZE], char systemBoard[SIZE][SIZE],
 		
 		printf("Create positions manually or randomly (0 or 1): ");
 		scanf("%i", &n);
+		
+		restartPositions("userBoard.txt", userBoard);
+		restartPositions("systemBoard.txt", systemBoard);
+		restartPositions("userView.txt", userView);
+		restartPositions("enemyView.txt", enemyView);
 		
 		if(n != 0){ //random users ship selection
 			generateShip("userBoard.txt", userBoard, 2);
