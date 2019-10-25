@@ -13,3 +13,8 @@ BattleShip game in console, play against an AI.
 
 
 ![alt text](https://images-na.ssl-images-amazon.com/images/I/51Rq4Jg-rAL._SX425_.jpg)
+
+# TO-DO
+
+- User decides ships
+- User decides board size
