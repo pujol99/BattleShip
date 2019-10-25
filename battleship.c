@@ -3,14 +3,12 @@
 #include <string.h>
 #define SIZE 12
 
-void userTurn(char ourBoard[SIZE][SIZE], char enemyBoard[SIZE][SIZE], 
-			  char userView[SIZE][SIZE], char enemyView[SIZE][SIZE]);
+void userTurn(char userBoard[SIZE][SIZE], char systemBoard[SIZE][SIZE], char userShots[SIZE][SIZE], char systemShots[SIZE][SIZE]);
 
 void readPositions(char path[28], char board[SIZE][SIZE]){
-	FILE *f;
+	FILE *f = fopen(path, "r");
 	char line[24];
 	int i, j = 0;
-	f = fopen(path, "r");
 	if(f){
 		while(fgets(line, sizeof(line), f)){
 			for(i = 0; i < SIZE; i++){
@@ -20,34 +18,37 @@ void readPositions(char path[28], char board[SIZE][SIZE]){
 	}
 }
 
-void writePositions(char path[28], char board[SIZE][SIZE]){
+void updatePositions(char path[28], char board[SIZE][SIZE]){
 	FILE *f = fopen(path, "w");
 	int i, j;
-	for(i = 0; i < SIZE; i++){
-		fprintf(f, "X");
-	}fprintf(f, "\nX");
-	for(i = 1; i < SIZE-1; i++){
-		for(j = 1; j < SIZE-1; j++){
-				fprintf(f, "%c", board[i][j]);
-		}fprintf(f, "X\nX");
-	}
-	for(i = 0; i < SIZE-1; i++){
-		fprintf(f, "X");
+	if(f){
+		for(i = 0; i < SIZE; i++){
+			fprintf(f, "X");
+		}
+		fprintf(f, "\nX");
+		for(i = 1; i < SIZE-1; i++){
+			for(j = 1; j < SIZE-1; j++){
+					fprintf(f, "%c", board[i][j]);
+			}fprintf(f, "X\nX");
+		}
+		for(i = 0; i < SIZE-1; i++){
+			fprintf(f, "X");
+		}
 	}fclose(f);
 }
 
-void writeShip(char path[28], char board[SIZE][SIZE], int size, int horitzontal, int x, int y){
+void writeShip(char path[28], char board[SIZE][SIZE], int size, int dir, int x, int y){
 	int i;
-	if(horitzontal){
+	if(dir){ 	//horitzonal
 		for(i = 0; i < size; i++){
 			board[y+1][x+1+i] = '$';
 		}
-	}else{
+	}else{		//vertical
 		for(i = 0; i < size; i++){
 			board[y+1+i][x+1] = '$';
 		}
 	}	
-	writePositions(path, board);
+	updatePositions(path, board);
 }
 
 int getRand(int max){
@@ -59,7 +60,7 @@ int itsValid(int dir, int size, int xo, int yo, char board[SIZE][SIZE]){
 	xo++;
 	yo++;
 	if(dir == 0){	//VERTICAL
-		if(yo > SIZE-2-size){
+		if(yo > SIZE-2-size+1){
 			return 0;
 		}else{
 			for(i = -1; i < size+1; i++){
@@ -70,7 +71,7 @@ int itsValid(int dir, int size, int xo, int yo, char board[SIZE][SIZE]){
 			return 1;
 		}
 	}else{			//HORIZONTAL
-		if(xo > SIZE-2-size){
+		if(xo > SIZE-2-size+1){
 			return 0;
 		}else{
 			for(i = -1; i < size+1; i++){
@@ -86,9 +87,9 @@ void generateShip(char path[28], char board[SIZE][SIZE], int size){
 	int dir = getRand(2), xo, yo;
 	if(dir == 0){
 		xo = getRand(SIZE-2);
-		yo = getRand(SIZE-2-size);
+		yo = getRand(SIZE-2-size+1);
 	}else{
-		xo = getRand(SIZE-2-size);
+		xo = getRand(SIZE-2-size+1);
 		yo = getRand(SIZE-2);
 	}
 	
@@ -108,7 +109,7 @@ void restartPositions(char path[28], char board[SIZE][SIZE]){
 		}
 	}
 	if(path != ""){
-		writePositions(path, board);
+		updatePositions(path, board);
 	}
 }
 
@@ -124,7 +125,7 @@ void printBoard(char board[SIZE][SIZE]){
 
 void printBoards(char board[SIZE][SIZE], char board2[SIZE][SIZE]){
 	int i, j;
-	printf("\nUser shots                Enemy shots\n");
+	printf("\nUser shots                system shots\n");
 	for(i = 1; i < SIZE-1; i++){
 		for(j = 1; j < SIZE-1; j++){
 			printf("%c ", board[i][j]);
@@ -164,40 +165,212 @@ int getShips(char board[SIZE][SIZE]){
 	}return c;
 }
 
-
-void systemTurn(char ourBoard[SIZE][SIZE],char enemyBoard[SIZE][SIZE], 
-			    char systemView[SIZE][SIZE], char enemyView[SIZE][SIZE]){
-	if(getShips(systemView) == 14){
-		printf("\nGame finished, system won!\n");
-		restartPositions("userBoard.txt", ourBoard);
-		restartPositions("systemBoard.txt", enemyBoard);
-		restartPositions("userView.txt", enemyView);
-		restartPositions("enemyView.txt", systemView);
+void shoot(char userBoard[SIZE][SIZE], char systemShots[SIZE][SIZE], int i, int j){
+	if(userBoard[j][i] == '$'){
+		systemShots[j][i] = '$';
+		updatePositions("systemShots.txt", systemShots);	
 	}else{
-		int x = rand() % 10;
-		int y = rand() % 10;
-		if(enemyBoard[y+1][x+1] == '$'){
-			systemView[y+1][x+1] = '$';
-			writePositions("enemyView.txt", systemView);
-			userTurn(enemyBoard, ourBoard, enemyView, systemView);
-		}else{
-			systemView[y+1][x+1] = 'O';
-			writePositions("enemyView.txt", systemView);
-			userTurn(enemyBoard, ourBoard, enemyView, systemView);
-		}
+		systemShots[j][i] = 'O';
+		updatePositions("systemShots.txt", systemShots);
 	}
 }
 
-void userTurn(char ourBoard[SIZE][SIZE], char enemyBoard[SIZE][SIZE], 
-			  char userView[SIZE][SIZE], char enemyView[SIZE][SIZE]){
-	printBoards(userView, enemyView);
-	int x, y;
-	if(getShips(userView) == 14){
+void nextPosition(int *x, int *y){
+	*y += 2;
+	if(*y > 9){
+		if(*x%2 == 0){
+			*y = 1;
+		}else{
+			*y = 0;
+		}*x += 1;
+	}
+}
+
+void AIsystem(char userBoard[SIZE][SIZE],char systemBoard[SIZE][SIZE], char userShots[SIZE][SIZE], char systemShots[SIZE][SIZE], int x, int y){
+	int i = x + 1, j = y + 1;
+	if(systemShots[j][i] == '-'){	//unexplored --> shoot
+		shoot(userBoard, systemShots, i, j);
+		userTurn(userBoard, systemBoard, userShots, systemShots);
+	}
+	else if(systemShots[j][i] == '$'){	//ship part --> try to find entire ship
+	
+		if(systemShots[j][i-1] == '$'){ //check behind
+			
+			if(systemShots[j][i+1] == '$'){ //check right
+				
+				if(systemShots[j][i+2] == '$'){ //check right
+					
+					if(systemShots[j][i+3] == '-'){ //check right
+						shoot(userBoard, systemShots, i+3, j);
+						userTurn(userBoard, systemBoard, userShots, systemShots);
+					}else{
+						nextPosition(&x, &y);	//next position
+						AIsystem(userBoard, systemBoard, userShots, systemShots, x, y);
+					}
+				}else if(systemShots[j][i+2] == '-'){
+					shoot(userBoard, systemShots, i+2, j);
+					userTurn(userBoard, systemBoard, userShots, systemShots);
+				}else{
+					nextPosition(&x, &y);	//next position
+					AIsystem(userBoard, systemBoard, userShots, systemShots, x, y);
+				}
+				
+			}else if(systemShots[j][i+1] == '-'){
+				shoot(userBoard, systemShots, i+1, j);
+				userTurn(userBoard, systemBoard, userShots, systemShots);
+			}else{
+				nextPosition(&x, &y);	//next position
+				AIsystem(userBoard, systemBoard, userShots, systemShots, x, y);
+			}
+		}else if(systemShots[j][i-1] == '-'){
+			shoot(userBoard, systemShots, i-1, j);
+			userTurn(userBoard, systemBoard, userShots, systemShots);
+		}else{
+			if(systemShots[j-1][i] == '$'){
+				
+				if(systemShots[j+1][i] == '$'){ //check down
+					
+					if(systemShots[j+2][i] == '$'){ //check down
+						
+						if(systemShots[j+3][i] == '-'){ //check down
+							shoot(userBoard, systemShots, i, j+3);
+							userTurn(userBoard, systemBoard, userShots, systemShots);
+						}else{
+							x = i-1;
+							y = j+2;
+							nextPosition(&x, &y);	//next position
+							AIsystem(userBoard, systemBoard, userShots, systemShots, x, y);
+						}
+					}else if(systemShots[j+2][i] == '-'){
+						shoot(userBoard, systemShots, i, j+2);
+						userTurn(userBoard, systemBoard, userShots, systemShots);
+					}else{
+						x = i-1;
+						y = j+1;
+						nextPosition(&x, &y);	//next position
+						AIsystem(userBoard, systemBoard, userShots, systemShots, x, y);
+					}
+					
+				}else if(systemShots[j+1][i] == '-'){
+					shoot(userBoard, systemShots, i, j+1);
+					userTurn(userBoard, systemBoard, userShots, systemShots);
+				}else{
+					x = i-1;
+					y = j;
+					nextPosition(&x, &y);	//next position
+					AIsystem(userBoard, systemBoard, userShots, systemShots, x, y);
+				}
+			}else if(systemShots[j-1][i] == '-'){
+				shoot(userBoard, systemShots, i, j-1);
+				userTurn(userBoard, systemBoard, userShots, systemShots);
+			}else{
+				if(systemShots[j][i+1] == '$'){ //check right
+				
+					if(systemShots[j][i+2] == '$'){ //check right
+						
+						if(systemShots[j][i+3] == '$'){ //check right
+						
+							if(systemShots[j][i+4] == '-'){ //check right
+								shoot(userBoard, systemShots, i+4, j);
+								userTurn(userBoard, systemBoard, userShots, systemShots);
+							}else{
+								nextPosition(&x, &y);	//next position
+								AIsystem(userBoard, systemBoard, userShots, systemShots, x, y);
+							}
+						}else if(systemShots[j][i+3] == '-'){
+							shoot(userBoard, systemShots, i+3, j);
+							userTurn(userBoard, systemBoard, userShots, systemShots);
+						}else{
+							nextPosition(&x, &y);	//next position
+							AIsystem(userBoard, systemBoard, userShots, systemShots, x, y);
+						}
+					}else if(systemShots[j][i+2] == '-'){
+						shoot(userBoard, systemShots, i+2, j);
+						userTurn(userBoard, systemBoard, userShots, systemShots);
+					}else{
+						nextPosition(&x, &y);	//next position
+						AIsystem(userBoard, systemBoard, userShots, systemShots, x, y);
+					}
+				
+				}else if(systemShots[j][i+1] == '-'){
+					shoot(userBoard, systemShots, i+1, j);
+					userTurn(userBoard, systemBoard, userShots, systemShots);
+				}else{
+					//
+					if(systemShots[j+1][i] == '$'){ //check down
+					
+						if(systemShots[j+2][i] == '$'){ //check down
+							
+							if(systemShots[j+3][i] == '$'){ //check down
+							
+								if(systemShots[j+4][i] == '-'){ //check down
+									shoot(userBoard, systemShots, i, j+4);
+									userTurn(userBoard, systemBoard, userShots, systemShots);
+								}else{
+									x = i-1;
+									y = j+3;
+									nextPosition(&x, &y);	//next position
+									AIsystem(userBoard, systemBoard, userShots, systemShots, x, y);
+								}
+							}else if(systemShots[j+3][i] == '-'){
+								shoot(userBoard, systemShots, i, j+3);
+								userTurn(userBoard, systemBoard, userShots, systemShots);
+							}else{
+								x = i-1;
+								y = j+2;
+								nextPosition(&x, &y);	//next position
+								AIsystem(userBoard, systemBoard, userShots, systemShots, x, y);
+							}
+						}else if(systemShots[j+2][i] == '-'){
+							shoot(userBoard, systemShots, i, j+2);
+							userTurn(userBoard, systemBoard, userShots, systemShots);
+						}else{
+							x = i-1;
+							y = j+1;
+							nextPosition(&x, &y);	//next position
+							AIsystem(userBoard, systemBoard, userShots, systemShots, x, y);
+						}
+						
+					}else if(systemShots[j+1][i] == '-'){
+						shoot(userBoard, systemShots, i, j+1);
+						userTurn(userBoard, systemBoard, userShots, systemShots);
+					}else{
+						x = i-1;
+						y = j;
+						nextPosition(&x, &y);	//next position
+						AIsystem(userBoard, systemBoard, userShots, systemShots, x, y);
+					}
+				}
+			}
+		}
+	}else{
+		nextPosition(&x, &y);	//next position
+		AIsystem(userBoard, systemBoard, userShots, systemShots, x, y);
+	}
+	
+}
+
+void systemTurn(char userBoard[SIZE][SIZE],char systemBoard[SIZE][SIZE], char userShots[SIZE][SIZE], char systemShots[SIZE][SIZE]){
+	if(getShips(userShots) == 14){
 		printf("\nGame finished, you won!\n");
-		restartPositions("userBoard.txt", ourBoard);
-		restartPositions("systemBoard.txt", enemyBoard);
-		restartPositions("userView.txt", userView);
-		restartPositions("enemyView.txt", enemyView);
+		restartPositions("userBoard.txt", userBoard);
+		restartPositions("systemBoard.txt", systemBoard);
+		restartPositions("userShots.txt", systemShots);
+		restartPositions("systemShots.txt", systemShots);
+	}else{
+		AIsystem(userBoard, systemBoard, userShots, systemShots, 0, 0);
+	}
+}
+
+void userTurn(char userBoard[SIZE][SIZE], char systemBoard[SIZE][SIZE], char userShots[SIZE][SIZE], char systemShots[SIZE][SIZE]){
+	printBoards(userShots, systemShots);
+	int x, y;
+	if(getShips(systemShots) == 14){
+		printf("\nGame finished, system won!\n");
+		restartPositions("userBoard.txt", userBoard);
+		restartPositions("systemBoard.txt", systemBoard);
+		restartPositions("userShots.txt", userShots);
+		restartPositions("systemShots.txt", systemShots);
 	}else{
 		printf("Pause (-1 0), Finish(-2 0)\n");
 		printf("Misil coordenates (x y): ");
@@ -205,78 +378,87 @@ void userTurn(char ourBoard[SIZE][SIZE], char enemyBoard[SIZE][SIZE],
 		if(x == -1){
 			printf("\nBye\n");
 		}else if(x == -2){
-			restartPositions("userBoard.txt", ourBoard);
-			restartPositions("systemBoard.txt", enemyBoard);
-			restartPositions("userView.txt", userView);
-			restartPositions("enemyView.txt", enemyView);
+			restartPositions("userBoard.txt", userBoard);
+			restartPositions("systemBoard.txt", systemBoard);
+			restartPositions("userShots.txt", userShots);
+			restartPositions("systemShots.txt", systemShots);
 			printf("\nBye\n");
 		}else if(x > 9 || x < 0 || y > 9 || y < 0){
 			printf("\nwrong coordenates...\n");
-			userTurn(ourBoard, enemyBoard, enemyView, userView);
+			userTurn(userBoard, systemBoard, userShots, systemShots);
 		}else{
-			if(enemyBoard[y+1][x+1] == '$'){
+			if(systemBoard[y+1][x+1] == '$'){
 				printf("\nHiit!\n");
-				userView[y+1][x+1] = '$';
-				writePositions("userView.txt", userView);
-				systemTurn(enemyBoard, ourBoard, enemyView, userView);	
+				userShots[y+1][x+1] = '$';
+				updatePositions("userShots.txt", userShots);
+				systemTurn(userBoard, systemBoard, userShots, systemShots);	
 			}else{
 				printf("\nMiss!\n");
-				userView[y+1][x+1] = 'O';
-				writePositions("userView.txt", userView);
-				systemTurn(enemyBoard, ourBoard, enemyView, userView);
+				userShots[y+1][x+1] = 'O';
+				updatePositions("userShots.txt", userShots);
+				systemTurn(userBoard, systemBoard, userShots, systemShots);
 			}
 		}
 	}
 }
 
 void setup(char userBoard[SIZE][SIZE], char systemBoard[SIZE][SIZE], 
-		   char userView[SIZE][SIZE], char enemyView[SIZE][SIZE]){
-			   
+		   char userShots[SIZE][SIZE], char systemShots[SIZE][SIZE]){  
 	int n;
+	//PASS DATA FROM FILES TO VARIABLES
 	readPositions("systemBoard.txt", systemBoard);
 	readPositions("userBoard.txt", userBoard);
-	readPositions("userView.txt", userView);
-	readPositions("enemyView.txt", enemyView);
+	readPositions("userShots.txt", userShots);
+	readPositions("systemShots.txt", systemShots);
 
-	if(getShips(userView) == 0){
+	if(getShips(userBoard) < 14){		//IF USER HASN'T ALL SHIPS ON BOARD RESTART POSITIONING
+		printf("Create positions manually or randomly (0 or 1): ");
+		scanf("%i", &n);
+		//RESTART POSITIONS
 		restartPositions("systemBoard.txt", systemBoard);
+		restartPositions("userBoard.txt", userBoard);
+		restartPositions("userShots.txt", userShots);
+		restartPositions("systemShots.txt", systemShots);
+		//GENERATE system SHIPS RANDOMLY
 		generateShip("systemBoard.txt", systemBoard, 2);
 		generateShip("systemBoard.txt", systemBoard, 3);
 		generateShip("systemBoard.txt", systemBoard, 4);
 		generateShip("systemBoard.txt", systemBoard, 5);
 		
-		printf("Create positions manually or randomly (0 or 1): ");
-		scanf("%i", &n);
-		
-		restartPositions("userBoard.txt", userBoard);
-		restartPositions("systemBoard.txt", systemBoard);
-		restartPositions("userView.txt", userView);
-		restartPositions("enemyView.txt", enemyView);
-		
-		if(n != 0){ //random users ship selection
+		if(n != 0){ 			//GENERATE USER SHIPS RANDOMLY
 			generateShip("userBoard.txt", userBoard, 2);
 			generateShip("userBoard.txt", userBoard, 3);
 			generateShip("userBoard.txt", userBoard, 4);
 			generateShip("userBoard.txt", userBoard, 5);
 			printBoard(userBoard);
-		}else{
+		}else{					//GENERATE USER SHIPS MANUALLY
 			fillBoard("userBoard.txt", userBoard);
 		}
-	}else{
-		printf("------------\n");
+	}else{								//CONTINUE GAME AS IT WAS
+		printf("-------------\n");
 		printf("CONTINUE GAME\n");
-		printf("------------\n");
+		printf("-------------\n");
 	}
 }
 
+void display_rules(){
+	printf("\tRules\n");
+	printf("\t1. No ships crossing\n");
+	printf("\t2. A line of water minimum within ships\n");
+}
+
 int main(int argc, char **argv){
-	char userBoard[SIZE][SIZE], systemBoard[SIZE][SIZE], userView[SIZE][SIZE], enemyView[SIZE][SIZE];
+	//GLOBLAL VARIABLES
+	char userBoard[SIZE][SIZE], systemBoard[SIZE][SIZE], userShots[SIZE][SIZE], systemShots[SIZE][SIZE];
 	time_t t;
 	srand((unsigned) time(&t));
 	
-	setup(userBoard, systemBoard, userView, enemyView);
+	//GAME
+	display_rules();
 	
-	userTurn(userBoard, systemBoard, userView, enemyView);	
+	setup(userBoard, systemBoard, userShots, systemShots);		//PREPARE GAME
+	
+	userTurn(userBoard, systemBoard, userShots, systemShots);	//START GAME
 		
 	return 0;
 }
