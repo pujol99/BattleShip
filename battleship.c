@@ -5,6 +5,13 @@
 
 void userTurn(char userBoard[SIZE][SIZE], char systemBoard[SIZE][SIZE], char userShots[SIZE][SIZE], char systemShots[SIZE][SIZE]);
 
+void display_rules(){
+	printf("\n\n\n\tRules\n");
+	printf("\t1. No ships crossing\n");
+	printf("\t2. A line of water minimum within ships\n");
+	printf("\t3. Input coordenates like this: 2 3\n");
+}
+
 void readPositions(char path[28], char board[SIZE][SIZE]){
 	FILE *f = fopen(path, "r");
 	char line[24];
@@ -115,38 +122,39 @@ void restartPositions(char path[28], char board[SIZE][SIZE]){
 
 void printBoard(char board[SIZE][SIZE]){
 	int i, j;
-	printf("\n");
+	printf("\n ");
 	for(i = 1; i < SIZE-1; i++){
 		for(j = 1; j < SIZE-1; j++){
 			printf("%c ", board[i][j]);
-		}printf("%i\n", i-1);
+		}printf("%i\n ", i-1);
 	}printf("0 1 2 3 4 5 6 7 8 9\n");
 }
 
 void printBoards(char board[SIZE][SIZE], char board2[SIZE][SIZE]){
 	int i, j;
-	printf("\nUser shots                system shots\n");
+	printf("\n-----------------------------------------------");
+	printf("\n User shots            |          System shots\n ");
 	for(i = 1; i < SIZE-1; i++){
 		for(j = 1; j < SIZE-1; j++){
 			printf("%c ", board[i][j]);
-		}printf("%i  ", i-1);
+		}printf("%i | ", i-1);
 		for(j = 1; j < SIZE-1; j++){
 			printf("%c ", board2[i][j]);
-		}printf("%i\n", i-1);
-	}printf("0 1 2 3 4 5 6 7 8 9    0 1 2 3 4 5 6 7 8 9\n");
+		}printf("%i\n ", i-1);
+	}printf("0 1 2 3 4 5 6 7 8 9   | 0 1 2 3 4 5 6 7 8 9\n\n");
 }
 	
 void fillBoard(char path[28], char board[SIZE][SIZE]){
 	int i, x, y, dir;
 	for(i = 2; i < 6; i++){
 		printBoard(board);
-		printf("\nInput the %i-size ship coordenates(x y): ", i);
+		printf("\n Input the %i-size ship coordenates(x y): ", i);
 		scanf("%i", &x);
 		scanf("%i", &y);
-		printf("Vertical or horitzonal (0/1): ");
+		printf(" Vertical or Horitzonal (0 or 1): ");
 		scanf("%i", &dir);
 		if(itsValid(dir, i, x, y, board) == 0){
-			printf("\nWrong position think it better...\n");
+			printf("\n Wrong position think it better...\n");
 			i--;
 		}else{
 			writeShip(path, board, i, dir, x, y);
@@ -352,7 +360,7 @@ void AIsystem(char userBoard[SIZE][SIZE],char systemBoard[SIZE][SIZE], char user
 
 void systemTurn(char userBoard[SIZE][SIZE],char systemBoard[SIZE][SIZE], char userShots[SIZE][SIZE], char systemShots[SIZE][SIZE]){
 	if(getShips(userShots) == 14){
-		printf("\nGame finished, you won!\n");
+		printf("\nGame finished, YOU won!\n");
 		restartPositions("userBoard.txt", userBoard);
 		restartPositions("systemBoard.txt", systemBoard);
 		restartPositions("userShots.txt", systemShots);
@@ -366,17 +374,17 @@ void userTurn(char userBoard[SIZE][SIZE], char systemBoard[SIZE][SIZE], char use
 	printBoards(userShots, systemShots);
 	int x, y;
 	if(getShips(systemShots) == 14){
-		printf("\nGame finished, system won!\n");
+		printf("\nGame finished, SYSTEM won!\n");
 		restartPositions("userBoard.txt", userBoard);
 		restartPositions("systemBoard.txt", systemBoard);
 		restartPositions("userShots.txt", userShots);
 		restartPositions("systemShots.txt", systemShots);
 	}else{
-		printf("Pause (-1 0), Finish(-2 0)\n");
-		printf("Misil coordenates (x y): ");
+		printf("  Pause (-1 0), Finish(-2 0)\n");
+		printf("  Misil coordenates (x y): ");
 		scanf("%i", &x);scanf("%i", &y);
 		if(x == -1){
-			printf("\nBye\n");
+			printf("\n\n\n");
 		}else if(x == -2){
 			restartPositions("userBoard.txt", userBoard);
 			restartPositions("systemBoard.txt", systemBoard);
@@ -388,12 +396,12 @@ void userTurn(char userBoard[SIZE][SIZE], char systemBoard[SIZE][SIZE], char use
 			userTurn(userBoard, systemBoard, userShots, systemShots);
 		}else{
 			if(systemBoard[y+1][x+1] == '$'){
-				printf("\nHiit!\n");
+				printf("\n HIT!\n");
 				userShots[y+1][x+1] = '$';
 				updatePositions("userShots.txt", userShots);
 				systemTurn(userBoard, systemBoard, userShots, systemShots);	
 			}else{
-				printf("\nMiss!\n");
+				printf("\n MISS!\n");
 				userShots[y+1][x+1] = 'O';
 				updatePositions("userShots.txt", userShots);
 				systemTurn(userBoard, systemBoard, userShots, systemShots);
@@ -412,7 +420,7 @@ void setup(char userBoard[SIZE][SIZE], char systemBoard[SIZE][SIZE],
 	readPositions("systemShots.txt", systemShots);
 
 	if(getShips(userBoard) < 14){		//IF USER HASN'T ALL SHIPS ON BOARD RESTART POSITIONING
-		printf("Create positions manually or randomly (0 or 1): ");
+		printf("  Create your positions manually or randomly (0 or 1): ");
 		scanf("%i", &n);
 		//RESTART POSITIONS
 		restartPositions("systemBoard.txt", systemBoard);
@@ -432,19 +440,13 @@ void setup(char userBoard[SIZE][SIZE], char systemBoard[SIZE][SIZE],
 			generateShip("userBoard.txt", userBoard, 5);
 			printBoard(userBoard);
 		}else{					//GENERATE USER SHIPS MANUALLY
+			display_rules();
 			fillBoard("userBoard.txt", userBoard);
 		}
+		printf("\n-----------------/GAME STARTED/----------------\n");
 	}else{								//CONTINUE GAME AS IT WAS
-		printf("-------------\n");
-		printf("CONTINUE GAME\n");
-		printf("-------------\n");
+		printf("\n\n\n----------------/GAME RESTARTED/---------------\n");
 	}
-}
-
-void display_rules(){
-	printf("\tRules\n");
-	printf("\t1. No ships crossing\n");
-	printf("\t2. A line of water minimum within ships\n");
 }
 
 int main(int argc, char **argv){
@@ -454,8 +456,6 @@ int main(int argc, char **argv){
 	srand((unsigned) time(&t));
 	
 	//GAME
-	display_rules();
-	
 	setup(userBoard, systemBoard, userShots, systemShots);		//PREPARE GAME
 	
 	userTurn(userBoard, systemBoard, userShots, systemShots);	//START GAME
